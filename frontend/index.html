@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Chat</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f7f8fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        #chat-container {
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            max-width: 100%;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        #chatbox {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .message {
+            margin-bottom: 15px;
+            padding: 12px;
+            border-radius: 8px;
+            background-color: #e0f7fa;
+            color: #006064;
+            max-width: 70%;
+            word-wrap: break-word;
+        }
+
+        .own {
+            background-color: #e0fae5;
+            color: #1b5053;
+        }
+
+        #input-container {
+            display: flex;
+            padding: 10px;
+            background-color: #f0f0f0;
+        }
+        #recipient-id {
+            flex: 0 0 30%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-right: 10px;
+            font-size: 16px;
+        }
+        #message {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-right: 10px;
+            font-size: 16px;
+        }
+        #send-button {
+            padding: 10px 20px;
+            background-color: #00acc1;
+            border: none;
+            color: white;
+            font-size: 16px;
+            font-weight: 500;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        #send-button:hover {
+            background-color: #00838f;
+        }
+        #send-button:active {
+            background-color: #006064;
+        }
+    </style>
+</head>
+<body>
+    <div id="chat-container">
+        <div id="chatbox"></div>
+        <div id="input-container">
+            <input type="text" id="recipient-id" placeholder="ID do destinatário" />
+            <input type="text" id="message" placeholder="Digite uma mensagem..." />
+            <button id="send-button" onclick="sendMessage()">Enviar</button>
+        </div>
+    </div>
+
+    <script>
+        var userId = prompt("Por favor, insira seu ID de usuário:");
+        var userName = prompt("Por favor, insira seu nome:");
+        var ws = new WebSocket("ws://10.51.64.123:8080/chat?userId=" + userId);
+        var chatbox = document.getElementById('chatbox');
+        var recipientInput = document.getElementById('recipient-id');
+        var messageInput = document.getElementById('message');
+
+        ws.onmessage = function(event) {
+            var newMessage = document.createElement('div');
+            newMessage.className = 'message';
+            newMessage.textContent = event.data;
+            chatbox.appendChild(newMessage);
+            chatbox.scrollTop = chatbox.scrollHeight;
+        };
+
+        function addOwnMessage(userName, message) {
+            var newMessage = document.createElement('div');
+            newMessage.className = 'message own';
+            newMessage.textContent = userName + ": " + message;
+            chatbox.appendChild(newMessage);
+            chatbox.scrollTop = chatbox.scrollHeight;
+        }
+
+        function sendMessage() {
+            var recipientId = recipientInput.value;
+            var message = messageInput.value;
+            if (recipientId.trim() !== '' && message.trim() !== '') {
+                var messagePayload = JSON.stringify({
+                    recipientId: recipientId,
+                    senderName: userName,
+                    content: message
+                });
+                ws.send(messagePayload);
+                addOwnMessage(userName, message);
+                messageInput.value = '';
+                messageInput.focus();
+            }
+        }
+
+        messageInput.addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+</html>
